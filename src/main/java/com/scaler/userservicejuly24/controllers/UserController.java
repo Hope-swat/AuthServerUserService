@@ -1,9 +1,13 @@
 package com.scaler.userservicejuly24.controllers;
 
 import com.scaler.userservicejuly24.dtos.*;
+import com.scaler.userservicejuly24.dtos.ResponseStatus;
+import com.scaler.userservicejuly24.models.Token;
+import com.scaler.userservicejuly24.models.User;
 import com.scaler.userservicejuly24.services.UserService;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users")
@@ -14,19 +18,57 @@ public class UserController {
         this.userService = userService;
     }
 
-    public LoginResponseDto login(LoginRequestDto requestDto) {
-        return null;
+    @PostMapping("/login")
+    public LoginResponseDto login(@RequestBody LoginRequestDto requestDto) {
+        Token token = userService.login(
+                requestDto.getEmail(),
+                requestDto.getPassword()
+        );
+
+        LoginResponseDto responseDto = new LoginResponseDto();
+        responseDto.setToken(token);
+
+        return responseDto;
     }
 
-    public SignUpResponseDto signUp(SignUpRequestDto requestDto) {
-        return null;
+    @PostMapping("/signup")
+    public SignUpResponseDto signUp(@RequestBody SignUpRequestDto requestDto) {
+        User user = userService.signUp(
+                requestDto.getName(),
+                requestDto.getEmail(),
+                requestDto.getPassword()
+        );
+
+        SignUpResponseDto responseDto = new SignUpResponseDto();
+        responseDto.setUser(user);
+        responseDto.setResponseStatus(ResponseStatus.SUCCESS);
+
+        return responseDto;
     }
 
-    public UserDto validateToken(ValidateTokenRequestDto requestDto) {
-        return null;
+    @GetMapping("/validate/{token}")
+    public UserDto validateToken(@PathVariable("token") String token) {
+
+        User user = userService.validateToken(token);
+
+        return UserDto.fromUser(user);
     }
 
-    public LogoutResponseDto logout(LogoutRequestDto requestDto) {
-        return null;
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody LogoutRequestDto requestDto) {
+        ResponseEntity<Void> responseEntity = null;
+        try {
+            userService.logout(requestDto.getToken());
+
+            responseEntity = new ResponseEntity<>(
+                    HttpStatus.OK
+            );
+        } catch (Exception e) {
+            responseEntity = new ResponseEntity<>(
+                    HttpStatus.UNAUTHORIZED
+            );
+        }
+
+        return responseEntity;
     }
 }
