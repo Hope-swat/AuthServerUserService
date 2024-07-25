@@ -1,10 +1,14 @@
 package com.scaler.userservicejuly24.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.scaler.userservicejuly24.dtos.SendEmailEventDto;
 import com.scaler.userservicejuly24.models.Token;
 import com.scaler.userservicejuly24.models.User;
 import com.scaler.userservicejuly24.repositories.TokenRepository;
 import com.scaler.userservicejuly24.repositories.UserRepository;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +23,19 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     protected BCryptPasswordEncoder bCryptPasswordEncoder;
     private TokenRepository tokenRepository;
+    private KafkaTemplate<String, String> kafkaTemplate;
+    private ObjectMapper objectMapper;
 
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder bCryptPasswordEncoder,
-                           TokenRepository tokenRepository) {
+                           TokenRepository tokenRepository,
+                           KafkaTemplate kafkaTemplate,
+                           ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.tokenRepository = tokenRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -43,6 +53,22 @@ public class UserServiceImpl implements UserService {
             user.setHashedPassword(bCryptPasswordEncoder.encode(password));
 
             user = userRepository.save(user);
+
+            //Publish an event inside the Queue.
+            SendEmailEventDto emailEventDto = new SendEmailEventDto();
+            emailEventDto.setTo(email);
+            emailEventDto.setFrom("t18696872@gmail.com");
+            emailEventDto.setSubject("Welcome to Scaler");
+            emailEventDto.setBody("Welcome to Scaler, We are very happy to have you on our platform. All the best!!");
+
+            try {
+                kafkaTemplate.send(
+                        "sendEmail",
+                        objectMapper.writeValueAsString(emailEventDto)
+                );
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         return user;
