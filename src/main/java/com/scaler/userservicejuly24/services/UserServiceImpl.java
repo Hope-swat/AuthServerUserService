@@ -55,20 +55,20 @@ public class UserServiceImpl implements UserService {
             user = userRepository.save(user);
 
             //Publish an event inside the Queue.
-            SendEmailEventDto emailEventDto = new SendEmailEventDto();
-            emailEventDto.setTo(email);
-            emailEventDto.setFrom("t18696872@gmail.com");
-            emailEventDto.setSubject("Welcome to Scaler");
-            emailEventDto.setBody("Welcome to Scaler, We are very happy to have you on our platform. All the best!!");
-
-            try {
-                kafkaTemplate.send(
-                        "sendEmail",
-                        objectMapper.writeValueAsString(emailEventDto)
-                );
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+//            SendEmailEventDto emailEventDto = new SendEmailEventDto();
+//            emailEventDto.setTo(email);
+//            emailEventDto.setFrom("t18696872@gmail.com");
+//            emailEventDto.setSubject("Welcome to Scaler");
+//            emailEventDto.setBody("Welcome to Scaler, We are very happy to have you on our platform. All the best!!");
+//
+//            try {
+//                kafkaTemplate.send(
+//                        "sendEmail",
+//                        objectMapper.writeValueAsString(emailEventDto)
+//                );
+//            } catch (JsonProcessingException e) {
+//                throw new RuntimeException(e);
+//            }
         }
 
         return user;
@@ -141,5 +141,16 @@ public class UserServiceImpl implements UserService {
 
         token1.setDeleted(true);
         tokenRepository.save(token1);
+    }
+
+    @Override
+    public User getUserDetails(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            throw new RuntimeException("User with id :" + userId + " not found");
+        }
+
+        return optionalUser.get();
     }
 }
