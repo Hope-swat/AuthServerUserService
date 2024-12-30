@@ -8,7 +8,7 @@ import com.scaler.userservicejuly24.models.User;
 import com.scaler.userservicejuly24.repositories.TokenRepository;
 import com.scaler.userservicejuly24.repositories.UserRepository;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.kafka.core.KafkaTemplate;
+//import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,18 +23,18 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     protected BCryptPasswordEncoder bCryptPasswordEncoder;
     private TokenRepository tokenRepository;
-    private KafkaTemplate<String, String> kafkaTemplate;
+   // private KafkaTemplate<String, String> kafkaTemplate;
     private ObjectMapper objectMapper;
 
     public UserServiceImpl(UserRepository userRepository,
                            BCryptPasswordEncoder bCryptPasswordEncoder,
                            TokenRepository tokenRepository,
-                           KafkaTemplate kafkaTemplate,
+                           //KafkaTemplate kafkaTemplate,
                            ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.tokenRepository = tokenRepository;
-        this.kafkaTemplate = kafkaTemplate;
+        //this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
     }
 

@@ -14,6 +14,9 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
@@ -21,6 +24,7 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -61,33 +65,35 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
-            throws Exception {
-        http
-                .authorizeHttpRequests((authorize) -> authorize
-                        .anyRequest().permitAll()
-                )
-                .cors().disable()
-                .csrf().disable()
-                // Form login handles the redirect to the login page from the
-                // authorization server filter chain
-                .formLogin(Customizer.withDefaults());
+	
+	  @Bean	  
+	  @Order(2)
+		public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http)
+				throws Exception {
+			http
+				.authorizeHttpRequests((authorize) -> authorize
+					.requestMatchers("/users/signup").permitAll()  //no authentication for signup request
+					.anyRequest().permitAll()
+				)
+				.cors().disable()
+				.csrf().disable()
+				// Form login handles the redirect to the login page from the
+				// authorization server filter chain
+				.formLogin(Customizer.withDefaults());
 
-        return http.build();
-    }
+			return http.build();
+		}
 
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        UserDetails userDetails = User.builder()
-//                .username("user")
-//                .password("$2a$12$r1WFFzYVr5dsqEngzQgShuaf8i1cCKivSgZUEiuEh9S2PxUgEWwTi")
-//                .roles("USER")
-//                .build();
-//
-//        return new InMemoryUserDetailsManager(userDetails);
-//    }
+	 
+//as User data should be fetched from database tables
+		/*
+		 * @Bean public UserDetailsService userDetailsService() { UserDetails
+		 * userDetails = User.builder() .username("user")
+		 * .password("$2a$12$r1WFFzYVr5dsqEngzQgShuaf8i1cCKivSgZUEiuEh9S2PxUgEWwTi")
+		 * .roles("USER") .build();
+		 * 
+		 * return new InMemoryUserDetailsManager(userDetails); }
+		 */
 
 //    @Bean
 //    public RegisteredClientRepository registeredClientRepository() {
@@ -144,18 +150,19 @@ public class SecurityConfig {
     }
 
     @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
-        return (context) -> {
-            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getClaims().claims((claims) -> {
-                    Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-                            .stream()
-                            .map(c -> c.replaceFirst("^ROLE_", ""))
-                            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
-                    claims.put("roles", roles);
-                    claims.put("userId", ((CustomUserDetails) context.getPrincipal().getPrincipal()).getUserId());
-                });
-            }
-        };
-    }
+    //Define an OAuth2TokenCustomizer<JwtEncodingContext> @Bean that allows for customizing the JWT claims.
+	public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() { 
+		return (context) -> {
+			if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) { //Check whether the JWT is an access token.
+				context.getClaims().claims((claims) -> {  //Access the default claims via the JwtEncodingContext.
+					Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
+							.stream()
+							.map(c -> c.replaceFirst("^ROLE_", ""))
+							.collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));  //Extract the roles from the Principal object. The role information is stored as a string prefixed with ROLE_, so we strip the prefix here.
+					claims.put("roles", roles); //	Set the custom claim roles to the set of roles collected from the previous step.
+					claims.put("userid", ((CustomUserDetails)context.getPrincipal().getPrincipal()).getUserId());
+				});
+			}
+		};
+	}
 }

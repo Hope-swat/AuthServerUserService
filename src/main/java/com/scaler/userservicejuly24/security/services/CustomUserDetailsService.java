@@ -3,7 +3,6 @@ package com.scaler.userservicejuly24.security.services;
 import com.scaler.userservicejuly24.models.User;
 import com.scaler.userservicejuly24.repositories.UserRepository;
 import com.scaler.userservicejuly24.security.models.CustomUserDetails;
-import jakarta.ws.rs.OPTIONS;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -19,6 +18,8 @@ public class CustomUserDetailsService implements UserDetailsService  {
         this.userRepository = userRepository;
     }
 
+    
+    //will get email as username from request, will fetch data from Users table based on email
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Optional<User> optionalUser = userRepository.findByEmail(email);
